@@ -1,30 +1,47 @@
-#include <stdint.h>
-#include "msp.h"  // Use the appropriate device header for your project
+//---------------------------------------------------------------------
+// FSM Collision Handling Function
+//
+// This function should be periodically called by the main FSM loop. It
+// examines the stored bump sensor data (collisionData) and then decides on the
+// appropriate reaction. The advanced logic here handles multiple simultaneous
+// collisions with these guidelines:
+//
+//   • Center collision (both left and right sensors active):
+//       - Reverse first.
+//       - Then choose the turn direction based on which side has more sensors activated.
+//   • Single-side collisions:
+//       - Turn away from the obstacle (e.g., if left sensors are active, turn right).
+//   • Corner collisions or ambiguous cases:
+//       - Reverse or perform a slight turn as a fallback.
+// After handling the collision, the function clears the collision flag.
+//--------------------------------------------------
 
-// Global variables for collision handling:
+
+
+
+
+#include <stdint.h>
+#include "msp.h"
+
+// Global variables
 volatile uint8_t collisionData = 0;    // Stores the bump sensor bitmask
 volatile uint8_t collisionOccurred = 0;  // Flag set when a collision is detected
 
-//----------------------------------------------------------------------
-// Function prototypes for Motor Control (to be implemented elsewhere)
-// These stubs represent actions such as stopping, reversing, and turning.
+
 void Motor_Stop(void);
 void Motor_Reverse(void);
 void Motor_Turn_Left(void);
 void Motor_Turn_Right(void);
 
-//----------------------------------------------------------------------
 // Prototype for FSM collision handling function.
-// This function is intended to be called in your main FSM loop.
 void HandleCollision(void);
 
-//----------------------------------------------------------------------
 // Bump Sensor Initialization and Interrupt Setup
 //
 // Pin Mapping (using negative logic with pull‑ups):
 //   Bump5 -> P4.7, Bump4 -> P4.6, Bump3 -> P4.5,
 //   Bump2 -> P4.3, Bump1 -> P4.2, Bump0 -> P4.0
-//----------------------------------------------------------------------
+//-------------------------------------------------------------------
 
 void Bump_Init(void) {
     // Configure bump sensor pins as inputs with pull-ups
@@ -102,23 +119,6 @@ void PORT4_IRQHandler(void) {
     }
 }
 
-//----------------------------------------------------------------------
-// FSM Collision Handling Function
-//
-// This function should be periodically called by the main FSM loop. It
-// examines the stored bump sensor data (collisionData) and then decides on the
-// appropriate reaction. The advanced logic here handles multiple simultaneous
-// collisions with these guidelines:
-//
-//   • Center collision (both left and right sensors active):
-//       - Reverse first.
-//       - Then choose the turn direction based on which side has more sensors activated.
-//   • Single-side collisions:
-//       - Turn away from the obstacle (e.g., if left sensors are active, turn right).
-//   • Corner collisions or ambiguous cases:
-//       - Reverse or perform a slight turn as a fallback.
-// After handling the collision, the function clears the collision flag.
-//----------------------------------------------------------------------
 
 void HandleCollision(void) {
     if (collisionOccurred) {
@@ -155,7 +155,7 @@ void HandleCollision(void) {
             } else if (rightCount > leftCount) {
                 Motor_Turn_Left();
             } else {
-                // If equal, use a default strategy (here, turning left).
+                // If equal, use a default strategy
                 Motor_Turn_Left();
             }
         } else if (leftCount > 0) {
